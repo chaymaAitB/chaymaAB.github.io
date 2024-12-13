@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Page</title>
+    <style>
+        .product {
+            margin: 20px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-right: 20px;
+            background-color: #eee;
+            transition: all 0.3s;
+        }
+        .sizes button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .product-info {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <h1>Our Products</h1>
+    <div id="products"></div>
+
+    <script>
+        const products = [
+            {
+                "_id": "P001",
+                "nom": "T-shirt en coton",
+                "description": "T-shirt confortable en coton bio.",
+                "variations": [
+                    { "taille": "S", "couleur": { "nom": "Rouge", "code": "#F00" }, "quantiteEnStock": 10, "prix": 19.99 },
+                    { "taille": "M", "couleur": { "nom": "Jaune", "code": "#FF0" }, "quantiteEnStock": 5, "prix": 19.99 },
+                    { "taille": "L", "couleur": { "nom": "Vert", "code": "#0F0" }, "quantiteEnStock": 8, "prix": 21.99 },
+                    { "taille": "L", "couleur": { "nom": "Rouge", "code": "#F00" }, "quantiteEnStock": 12, "prix": 22.99 }
+                ]
+            },
+            {
+                "_id": "P002",
+                "nom": "Sweat-shirt en laine",
+                "description": "Sweat-shirt doux en laine mélangée.",
+                "variations": [
+                    { "taille": "M", "couleur": { "nom": "Bleu", "code": "#00F" }, "quantiteEnStock": 6, "prix": 29.99 },
+                    { "taille": "L", "couleur": { "nom": "Noir", "code": "#000" }, "quantiteEnStock": 3, "prix": 34.99 },
+                    { "taille": "S", "couleur": { "nom": "Gris", "code": "#808080" }, "quantiteEnStock": 10, "prix": 27.99 }
+                ]
+            },
+            {
+                "_id": "P003",
+                "nom": "Veste en cuir",
+                "description": "Veste élégante en cuir de haute qualité.",
+                "variations": [
+                    { "taille": "M", "couleur": { "nom": "Marron", "code": "#A52A2A" }, "quantiteEnStock": 4, "prix": 149.99 },
+                    { "taille": "L", "couleur": { "nom": "Noir", "code": "#000" }, "quantiteEnStock": 2, "prix": 169.99 },
+                    { "taille": "XL", "couleur": { "nom": "Noir", "code": "#000" }, "quantiteEnStock": 1, "prix": 179.99 }
+                ]
+            }
+        ];
+
+        function updateProductDisplay(product) {
+            const productContainer = document.createElement('div');
+            productContainer.classList.add('product');
+            
+            const circle = document.createElement('div');
+            circle.classList.add('circle');
+            productContainer.appendChild(circle);
+
+            const productInfo = document.createElement('div');
+            productInfo.classList.add('product-info');
+
+            const name = document.createElement('h3');
+            name.textContent = product.nom;
+            productInfo.appendChild(name);
+
+            const description = document.createElement('p');
+            description.textContent = product.description;
+            productInfo.appendChild(description);
+
+            const colorContainer = document.createElement('div');
+            colorContainer.innerHTML = '<strong>Select Color:</strong>';
+
+            const sizeContainer = document.createElement('div');
+            sizeContainer.innerHTML = '<strong>Select Size:</strong>';
+
+            const priceContainer = document.createElement('div');
+            const quantityContainer = document.createElement('div');
+            priceContainer.innerHTML = '<strong>Price:</strong> $0.00';
+            quantityContainer.innerHTML = '<strong>In Stock:</strong> 0';
+
+            let selectedColor = null;
+            let selectedSize = null;
+
+            // Creating color buttons
+            const availableColors = [...new Set(product.variations.map(v => v.couleur.code))];
+            availableColors.forEach((color) => {
+                const colorRadio = document.createElement('input');
+                colorRadio.type = 'radio';
+                colorRadio.name = product._id + '-color';
+                colorRadio.value = color;
+                colorRadio.id = product._id + '-color-' + color;
+                colorRadio.addEventListener('change', () => {
+                    selectedColor = color;
+                    circle.style.backgroundColor = color;
+                    updateSizeOptions(selectedColor);
+                    updatePriceAndStock();
+                });
+
+                const label = document.createElement('label');
+                label.textContent = product.variations.find(v => v.couleur.code === color).couleur.nom;
+                label.setAttribute('for', colorRadio.id);
+
+                colorContainer.appendChild(colorRadio);
+                colorContainer.appendChild(label);
+            });
+
+            // Creating size buttons (will depend on color selection)
+            const availableSizes = [...new Set(product.variations.map(v => v.taille))];
+            availableSizes.forEach((size) => {
+                const sizeRadio = document.createElement('input');
+                sizeRadio.type = 'radio';
+                sizeRadio.name = product._id + '-size';
+                sizeRadio.value = size;
+                sizeRadio.id = product._id + '-size-' + size;
+                sizeRadio.addEventListener('change', () => {
+                    selectedSize = size;
+                    updatePriceAndStock();
+                    circle.style.width = circle.style.height = `${size === 'S' ? 100 : size === 'M' ? 120 : size === 'L' ? 140 : 160}px`;
+                });
+
+                const label = document.createElement('label');
+                label.textContent = size;
+                label.setAttribute('for', sizeRadio.id);
+
+                sizeContainer.appendChild(sizeRadio);
+                sizeContainer.appendChild(label);
+            });
+
+            // Append all to the product container
+            productInfo.appendChild(colorContainer);
+            productInfo.appendChild(sizeContainer);
+            productInfo.appendChild(priceContainer);
+            productInfo.appendChild(quantityContainer);
+
+            productContainer.appendChild(productInfo);
+            document.getElementById('products').appendChild(productContainer);
+
+            // Function to update available size options based on selected color
+            function updateSizeOptions(selectedColor) {
+                const sizeRadios = document.querySelectorAll(`[name="${product._id}-size"]`);
+                sizeRadios.forEach((radio) => {
+                    const sizeValue = radio.value;
+                    const available = product.variations.some(v => v.couleur.code === selectedColor && v.taille === sizeValue);
+                    radio.disabled = !available;
+                    radio.checked = false; // Reset checked state
+                });
+            }
+
+            // Function to update price and stock based on selected color and size
+            function updatePriceAndStock() {
+                if (selectedColor && selectedSize) {
+                    const selectedVariation = product.variations.find(v => v.couleur.code === selectedColor && v.taille === selectedSize);
+                    if (selectedVariation) {
+                        priceContainer.innerHTML = `<strong>Price:</strong> $${selectedVariation.prix}`;
+                        quantityContainer.innerHTML = `<strong>In Stock:</strong> ${selectedVariation.quantiteEnStock}`;
+                    }
+                } else {
+                    priceContainer.innerHTML = '<strong>Price:</strong> $0.00';
+                    quantityContainer.innerHTML = '<strong>In Stock:</strong> 0';
+                }
+            }
+        }
+
+        // Initialize products
+        products.forEach(product => updateProductDisplay(product));
+    </script>
+</body>
+</html>
